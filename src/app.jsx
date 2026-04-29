@@ -401,30 +401,43 @@ export default function App() {
 
   async function registrarConsumo(id) {
     if (consumoStatus[id] === "sending") return;
-    setConsumoStatus(p => ({ ...p, [id]: "sending" }));
-    const payload = { tipo: "consumo", data: hoje, ...vazio(), [id]: 1 };
-    try {
-      await fetch(SCRIPT_URL, {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      setConsumoStatus(p => ({ ...p, [id]: "ok" }));
-      setConsumoHist(prev => {
-        const novo = { ...prev };
-        if (!novo[hoje]) novo[hoje] = vazio();
-        novo[hoje] = { ...novo[hoje], [id]: (novo[hoje][id] || 0) + 1 };
-        return novo;
-      });
-      setTimeout(() => {
-        setConsumoStatus(p => ({ ...p, [id]: null }));
-        fetchHist();
-      }, 1500);
-    } catch {
-      setConsumoStatus(p => ({ ...p, [id]: "err" }));
-      setTimeout(() => setConsumoStatus(p => ({ ...p, [id]: null })), 3000);
+
+    if (consumoStatus[id] === "confirmar") {
+      setConsumoStatus(p => ({ ...p, [id]: "sending" }));
+      const payload = { tipo: "consumo", data: hoje, ...vazio(), [id]: 1 };
+      try {
+        await fetch(SCRIPT_URL, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        setConsumoStatus(p => ({ ...p, [id]: "ok" }));
+        setConsumoHist(prev => {
+          const novo = { ...prev };
+          if (!novo[hoje]) novo[hoje] = vazio();
+          novo[hoje] = { ...novo[hoje], [id]: (novo[hoje][id] || 0) + 1 };
+          return novo;
+        });
+        setTimeout(() => {
+          setConsumoStatus(p => ({ ...p, [id]: null }));
+          fetchHist();
+        }, 1500);
+      } catch {
+        setConsumoStatus(p => ({ ...p, [id]: "err" }));
+        setTimeout(() => setConsumoStatus(p => ({ ...p, [id]: null })), 3000);
+      }
+      return;
     }
+
+    // Primeiro toque — pede confirmação
+    setConsumoStatus(p => ({ ...p, [id]: "confirmar" }));
+    setTimeout(() => {
+      setConsumoStatus(p => {
+        if (p[id] === "confirmar") return { ...p, [id]: null };
+        return p;
+      });
+    }, 3000);
   }
 
   async function confirmar() {
@@ -546,12 +559,18 @@ export default function App() {
                     {consumoN > 0 && <span style={{ fontSize: 9, color: "#fb923c" }}>🍽️ {consumoN}</span>}
                   </div>
                   <button
-                    style={{ background: cStatus === "ok" ? "#166534" : cStatus === "err" ? "#7f1d1d" : "#1a0a00", border: `1px solid ${cStatus === "ok" ? "#4ade80" : cStatus === "err" ? "#ef4444" : "#fb923c44"}`, color: cStatus === "ok" ? "#4ade80" : cStatus === "err" ? "#ef4444" : "#fb923c", width: 32, height: 26, borderRadius: 7, fontSize: 10, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", transition: "all .2s" }}
+                    style={{
+                      background: cStatus === "ok" ? "#166534" : cStatus === "confirmar" ? "#7c2d12" : cStatus === "err" ? "#7f1d1d" : "#1a0a00",
+                      border: `1px solid ${cStatus === "ok" ? "#4ade80" : cStatus === "confirmar" ? "#fb923c" : cStatus === "err" ? "#ef4444" : "#fb923c44"}`,
+                      color: cStatus === "ok" ? "#4ade80" : cStatus === "confirmar" ? "#fdba74" : cStatus === "err" ? "#ef4444" : "#fb923c",
+                      width: 32, height: 26, borderRadius: 7, fontSize: 10, fontWeight: 700,
+                      display: "flex", alignItems: "center", justifyContent: "center", transition: "all .2s",
+                    }}
                     onClick={() => registrarConsumo(s.id)}
                     disabled={cStatus === "sending"}
                     title="Registrar consumo interno"
                   >
-                    {cStatus === "sending" ? "⏳" : cStatus === "ok" ? "✓" : cStatus === "err" ? "✗" : "C"}
+                    {cStatus === "sending" ? "⏳" : cStatus === "ok" ? "✓" : cStatus === "err" ? "✗" : cStatus === "confirmar" ? "OK?" : "C"}
                   </button>
                 </div>
               </div>
