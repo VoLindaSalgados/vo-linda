@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwVTevvISr_WZ3Zr819wGTIS4t_T-qDul_sw6no7tC-l-Dzgtd06OSZ0BuVA-jw6TQB/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby4Na_66YM7RghIhARzcw1hAdhWRU73b-zoK8l0dEuwk173JOcfW11pdiihtKF_jWED/exec";
 const PRECO = 4.00;
 
 const SABORES = [
