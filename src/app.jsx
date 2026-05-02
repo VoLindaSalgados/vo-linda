@@ -54,23 +54,58 @@ const DOCES = [
   { id: "pao_de_mel", nome: "Pao de Mel", preco: 8.00, cmv: 4.30, tipo: "doce" },
 ];
 
-async function enviarParaSheets(payload) {
+// Envia UM payload com array de itens — compativel com Apps Script atual
+async function enviarPedido(pedido_id, itens) {
   try {
+    const payload = {
+      pedido_id,
+      itens: itens.map(({ item, qtd }) => ({
+        tipo: item.tipo,
+        sabor: item.nome,
+        quantidade: qtd,
+        preco_unit: item.preco,
+        total: item.preco * qtd,
+        cmv_total: item.cmv * qtd,
+        consumo: false,
+      })),
+    };
     await fetch(SCRIPT_URL, {
       method: "POST", mode: "no-cors",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-  } catch (e) { console.error("Erro ao enviar ao Sheets:", e); }
+  } catch (e) { console.error("Erro ao enviar pedido:", e); }
+}
+
+// Consumo interno: envia item avulso (sem pedido_id)
+async function enviarConsumo(item, qtd) {
+  try {
+    const payload = {
+      tipo: "consumo",
+      sabor: item.nome,
+      categoria: item.tipo,
+      quantidade: qtd,
+      preco_unit: 0,
+      total: 0,
+      cmv_total: qtd * item.cmv,
+      consumo: true,
+    };
+    await fetch(SCRIPT_URL, {
+      method: "POST", mode: "no-cors",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+  } catch (e) { console.error("Erro ao enviar consumo:", e); }
 }
 
 const btnCircle = (bg) => ({
-  width: 32, height: 32, borderRadius: 16, border: "none",
-  background: bg, color: "#fff", fontWeight: 700, fontSize: 18,
+  width: 36, height: 36, borderRadius: 18, border: "none",
+  background: bg, color: "#fff", fontWeight: 700, fontSize: 20,
   cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+  flexShrink: 0,
 });
 const btnFlat = (bg, extra = {}) => ({
-  border: "none", borderRadius: 8, padding: "8px 0", background: bg,
+  border: "none", borderRadius: 8, padding: "10px 0", background: bg,
   color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer",
   fontFamily: FONT, letterSpacing: 0.5, transition: "opacity 0.15s", ...extra,
 });
@@ -78,55 +113,53 @@ const btnFlat = (bg, extra = {}) => ({
 function ItemCard({ item, onAddCarrinho, onConsumido }) {
   const [qtd, setQtd] = useState(0);
   const [msg, setMsg] = useState(null);
+
   const inc = () => setQtd((q) => q + 1);
   const dec = () => setQtd((q) => Math.max(0, q - 1));
-
-  function adicionarAoCarrinho() {
-    if (qtd === 0) return;
-    onAddCarrinho({ item, qtd });
-    setMsg("adicionado"); setQtd(0);
-    setTimeout(() => setMsg(null), 1500);
-  }
-
-  async function registrarConsumo() {
-    if (qtd === 0) return;
-    const payload = {
-      tipo: "consumo", sabor: item.nome, categoria: item.tipo,
-      quantidade: qtd, preco_unit: 0, total: 0,
-      cmv_total: qtd * item.cmv, consumo: true,
-      timestamp: new Date().toISOString()
-    };
-    await enviarParaSheets(payload);
-    onConsumido(payload);
-    setMsg("consumo"); setQtd(0);
-    setTimeout(() => setMsg(null), 1500);
-  }
-
   const temQtd = qtd > 0;
-  const corBorda = msg === "consumo" ? "#888" : msg === "adicionado" ? COR.laranja : temQtd ? COR.laranja : "#2a2a2a";
+
+  function adicionar() {
+    if (!temQtd) return;
+    onAddCarrinho({ item, qtd });
+    setMsg("add");
+    setQtd(0);
+    setTimeout(() => setMsg(null), 1200);
+  }
+
+  async function consumir() {
+    if (!temQtd) return;
+    await enviarConsumo(item, qtd);
+    onConsumido({ item, qtd });
+    setMsg("consumo");
+    setQtd(0);
+    setTimeout(() => setMsg(null), 1200);
+  }
+
+  const corBorda = msg ? COR.laranja : temQtd ? COR.laranja : "#2a2a2a";
 
   return (
-    <div style={{ background: COR.card, border: `1px solid ${corBorda}`, borderRadius: 12, padding: "12px 14px", marginBottom: 10, transition: "border-color 0.2s" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+    <div style={{ background: COR.card, border: `1px solid ${corBorda}`, borderRadius: 12, padding: "12px 14px", marginBottom: 8, transition: "border-color 0.2s" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
           <div style={{ color: COR.texto, fontWeight: 700, fontSize: 15, fontFamily: FONT }}>{item.nome}</div>
           <div style={{ color: COR.sub, fontSize: 12 }}>{fmt(item.preco)}</div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <button onClick={dec} style={btnCircle("#2a2a2a")}>−</button>
-          <span style={{ color: COR.texto, fontWeight: 700, fontSize: 18, minWidth: 24, textAlign: "center" }}>{qtd}</span>
+          <span style={{ color: COR.texto, fontWeight: 700, fontSize: 20, minWidth: 28, textAlign: "center" }}>{qtd}</span>
           <button onClick={inc} style={btnCircle(COR.laranja)}>+</button>
         </div>
       </div>
+
       {msg ? (
-        <div style={{ textAlign: "center", padding: "8px 0", borderRadius: 8, background: msg === "consumo" ? "#2a2a2a" : "#1a3a00", color: msg === "consumo" ? COR.sub : "#7fff00", fontWeight: 700, fontSize: 13, fontFamily: FONT }}>
+        <div style={{ marginTop: 8, textAlign: "center", padding: "7px 0", borderRadius: 8, background: msg === "consumo" ? "#2a2a2a" : "#1a3a00", color: msg === "consumo" ? "#aaa" : "#7fff00", fontWeight: 700, fontSize: 13, fontFamily: FONT }}>
           {msg === "consumo" ? "Consumo registrado" : "Adicionado ao carrinho"}
         </div>
       ) : (
-        <div style={{ display: "flex", gap: 6 }}>
-          <button onClick={registrarConsumo} disabled={!temQtd} style={btnFlat(temQtd ? "#3a3a3a" : "#222", { flex: 1, color: temQtd ? "#ccc" : "#555", fontSize: 12 })}>C</button>
-          <button onClick={adicionarAoCarrinho} disabled={!temQtd} style={btnFlat(temQtd ? COR.laranja : "#333", { flex: 3, color: temQtd ? "#fff" : "#555" })}>
-            {temQtd ? `+ Carrinho - ${fmt(qtd * item.preco)}` : "Selecione a quantidade"}
+        <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+          <button onClick={consumir} disabled={!temQtd} style={btnFlat(temQtd ? "#3a3a3a" : "#222", { flex: 1, color: temQtd ? "#ccc" : "#555", fontSize: 12 })}>C</button>
+          <button onClick={adicionar} disabled={!temQtd} style={btnFlat(temQtd ? COR.laranja : "#333", { flex: 3, color: temQtd ? "#fff" : "#555" })}>
+            {temQtd ? `+ Carrinho  ${fmt(qtd * item.preco)}` : "Selecione a quantidade"}
           </button>
         </div>
       )}
@@ -142,7 +175,7 @@ function CarrinhoBar({ carrinho, onConfirmar, onLimpar }) {
     <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: COR.marrom, padding: "12px 16px", display: "flex", gap: 8, zIndex: 100, boxShadow: "0 -4px 20px rgba(0,0,0,0.6)" }}>
       <button onClick={onLimpar} style={btnFlat("#1a0a00", { flex: 1, color: "#aaa", fontSize: 12 })}>Cancelar</button>
       <button onClick={onConfirmar} style={btnFlat(COR.laranja, { flex: 3, fontSize: 15 })}>
-        {totalItens} {totalItens === 1 ? "item" : "itens"} - Confirmar {fmt(total)}
+        {totalItens} {totalItens === 1 ? "item" : "itens"}  Confirmar  {fmt(total)}
       </button>
     </div>
   );
@@ -157,6 +190,7 @@ function AbaHoje({ pedidos, consumos, onFecharDia }) {
   const ticketMedio = pedidosUnicos.length > 0
     ? pedidos.filter((p) => p.pedido_id).reduce((s, p) => s + p.total, 0) / pedidosUnicos.length
     : 0;
+
   const rankMap = {};
   pedidos.forEach((p) => {
     if (!rankMap[p.sabor]) rankMap[p.sabor] = { lucro: 0, qtd: 0 };
@@ -164,29 +198,33 @@ function AbaHoje({ pedidos, consumos, onFecharDia }) {
     rankMap[p.sabor].qtd += p.quantidade;
   });
   const ranking = Object.entries(rankMap).sort((a, b) => b[1].lucro - a[1].lucro).slice(0, 5);
-  const cmvConsumos = consumos.reduce((s, c) => s + (c.cmv_total || 0), 0);
+  const cmvConsumos = consumos.reduce((s, c) => s + (c.item.cmv * c.qtd), 0);
 
   const kpi = (label, valor, cor = COR.laranja) => (
-    <div style={{ background: COR.card, borderRadius: 10, padding: "14px 12px", textAlign: "center", flex: 1 }}>
-      <div style={{ color: cor, fontWeight: 900, fontSize: 20, fontFamily: FONT }}>{valor}</div>
-      <div style={{ color: COR.sub, fontSize: 11, marginTop: 2 }}>{label}</div>
+    <div style={{ background: COR.card, borderRadius: 10, padding: "14px 8px", textAlign: "center", flex: 1 }}>
+      <div style={{ color: cor, fontWeight: 900, fontSize: 18, fontFamily: FONT }}>{valor}</div>
+      <div style={{ color: COR.sub, fontSize: 10, marginTop: 2 }}>{label}</div>
     </div>
   );
 
   return (
     <div style={{ paddingBottom: 80 }}>
-      <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
         {kpi("Faturamento", fmt(totalFaturamento))}
         {kpi("Margem", `${margem.toFixed(1)}%`, "#7fff00")}
         {kpi("Ticket Medio", fmt(ticketMedio))}
-        {kpi("Itens Vendidos", totalItens, "#aaa")}
+        {kpi("Itens", totalItens, "#aaa")}
       </div>
+
       {consumos.length > 0 && (
         <div style={{ background: "#1a1a2a", borderRadius: 10, padding: "10px 14px", marginBottom: 12, borderLeft: "3px solid #555" }}>
           <div style={{ color: "#aaa", fontWeight: 700, fontSize: 13, fontFamily: FONT }}>Consumo Interno</div>
-          <div style={{ color: COR.sub, fontSize: 12, marginTop: 4 }}>{consumos.length} item{consumos.length !== 1 ? "s" : ""} - CMV: {fmt(cmvConsumos)}</div>
+          <div style={{ color: COR.sub, fontSize: 12, marginTop: 4 }}>
+            {consumos.reduce((s, c) => s + c.qtd, 0)} itens  CMV: {fmt(cmvConsumos)}
+          </div>
         </div>
       )}
+
       {ranking.length > 0 && (
         <div style={{ background: COR.card, borderRadius: 10, padding: "12px 14px", marginBottom: 12 }}>
           <div style={{ color: COR.laranja, fontWeight: 900, fontFamily: FONT, fontSize: 14, marginBottom: 8 }}>TOP MARGEM</div>
@@ -198,9 +236,12 @@ function AbaHoje({ pedidos, consumos, onFecharDia }) {
           ))}
         </div>
       )}
+
       {pedidosUnicos.length > 0 && (
         <div style={{ background: COR.card, borderRadius: 10, padding: "12px 14px", marginBottom: 12 }}>
-          <div style={{ color: COR.sub, fontWeight: 700, fontFamily: FONT, fontSize: 13, marginBottom: 8 }}>PEDIDOS DO DIA ({pedidosUnicos.length})</div>
+          <div style={{ color: COR.sub, fontWeight: 700, fontFamily: FONT, fontSize: 13, marginBottom: 8 }}>
+            PEDIDOS DO DIA ({pedidosUnicos.length})
+          </div>
           {pedidosUnicos.slice(-10).reverse().map((pid) => {
             const itens = pedidos.filter((v) => v.pedido_id === pid);
             const totalPed = itens.reduce((s, v) => s + v.total, 0);
@@ -211,13 +252,18 @@ function AbaHoje({ pedidos, consumos, onFecharDia }) {
                   <span style={{ color: COR.sub, fontSize: 11 }}>{hora}</span>
                   <span style={{ color: COR.laranja, fontWeight: 700, fontSize: 13 }}>{fmt(totalPed)}</span>
                 </div>
-                <div style={{ color: "#888", fontSize: 11 }}>{itens.map((it) => `${it.sabor} x${it.quantidade}`).join(" - ")}</div>
+                <div style={{ color: "#888", fontSize: 11 }}>
+                  {itens.map((it) => `${it.sabor} x${it.quantidade}`).join("  ")}
+                </div>
               </div>
             );
           })}
         </div>
       )}
-      <button onClick={onFecharDia} style={btnFlat("#c70000", { width: "100%", padding: "14px 0", fontSize: 15 })}>Fechar Dia</button>
+
+      <button onClick={onFecharDia} style={btnFlat("#c70000", { width: "100%", padding: "14px 0", fontSize: 15 })}>
+        Fechar Dia
+      </button>
     </div>
   );
 }
@@ -231,27 +277,34 @@ export default function App() {
   function addCarrinho({ item, qtd }) {
     setCarrinho((prev) => {
       const idx = prev.findIndex((c) => c.item.id === item.id);
-      if (idx >= 0) { const novo = [...prev]; novo[idx] = { ...novo[idx], qtd: novo[idx].qtd + qtd }; return novo; }
+      if (idx >= 0) {
+        const novo = [...prev];
+        novo[idx] = { ...novo[idx], qtd: novo[idx].qtd + qtd };
+        return novo;
+      }
       return [...prev, { item, qtd }];
     });
   }
 
-  function registrarConsumo(payload) { setConsumos((prev) => [...prev, payload]); }
+  function registrarConsumo({ item, qtd }) {
+    setConsumos((prev) => [...prev, { item, qtd }]);
+  }
 
   async function confirmarPedido() {
     if (carrinho.length === 0) return;
     const pedido_id = String(Date.now());
-    const timestamp = new Date().toISOString();
-    const novosItens = [];
-    for (const { item, qtd } of carrinho) {
-      const payload = {
-        tipo: item.tipo, sabor: item.nome, quantidade: qtd,
-        preco_unit: item.preco, total: item.preco * qtd,
-        cmv_total: item.cmv * qtd, pedido_id, timestamp, consumo: false
-      };
-      await enviarParaSheets(payload);
-      novosItens.push(payload);
-    }
+
+    // Manda tudo de uma vez para o Apps Script
+    await enviarPedido(pedido_id, carrinho);
+
+    // Atualiza estado local
+    const novosItens = carrinho.map(({ item, qtd }) => ({
+      pedido_id,
+      sabor: item.nome,
+      quantidade: qtd,
+      total: item.preco * qtd,
+      cmv_total: item.cmv * qtd,
+    }));
     setPedidos((prev) => [...prev, ...novosItens]);
     setCarrinho([]);
     setAba("salgados");
@@ -259,7 +312,8 @@ export default function App() {
 
   function fecharDia() {
     if (!window.confirm("Fechar o dia? O historico local sera limpo.")) return;
-    setPedidos([]); setConsumos([]);
+    setPedidos([]);
+    setConsumos([]);
   }
 
   const renderItens = (lista) => lista.map((item) => (
@@ -270,7 +324,7 @@ export default function App() {
     { id: "salgados", label: "Salgados" },
     { id: "bebidas", label: "Bebidas" },
     { id: "doces", label: "Doces" },
-    { id: "hoje", label: "Hoje" }
+    { id: "hoje", label: "Hoje" },
   ];
 
   return (
@@ -284,17 +338,19 @@ export default function App() {
               background: aba === a.id ? COR.laranja : "transparent",
               color: aba === a.id ? "#fff" : "#aaa",
               fontWeight: 700, fontSize: 11, cursor: "pointer",
-              borderRadius: "6px 6px 0 0", fontFamily: FONT, transition: "all 0.15s"
+              borderRadius: "6px 6px 0 0", fontFamily: FONT, transition: "all 0.15s",
             }}>{a.label}</button>
           ))}
         </div>
       </div>
-      <div style={{ padding: "14px 12px", paddingBottom: carrinho.length > 0 ? 80 : 20 }}>
+
+      <div style={{ padding: "14px 12px", paddingBottom: carrinho.length > 0 ? 100 : 20 }}>
         {aba === "salgados" && renderItens(SALGADOS)}
         {aba === "bebidas" && renderItens(BEBIDAS)}
         {aba === "doces" && renderItens(DOCES)}
         {aba === "hoje" && <AbaHoje pedidos={pedidos} consumos={consumos} onFecharDia={fecharDia} />}
       </div>
+
       <CarrinhoBar carrinho={carrinho} onConfirmar={confirmarPedido} onLimpar={() => setCarrinho([])} />
     </div>
   );
