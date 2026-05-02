@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const _fontLink = document.createElement("link");
 _fontLink.rel = "stylesheet";
@@ -54,7 +54,6 @@ const DOCES = [
   { id: "pao_de_mel", nome: "Pao de Mel", preco: 8.00, cmv: 4.30, tipo: "doce" },
 ];
 
-// Envia UM payload com array de itens — compativel com Apps Script atual
 async function enviarPedido(pedido_id, itens) {
   try {
     const payload = {
@@ -77,7 +76,6 @@ async function enviarPedido(pedido_id, itens) {
   } catch (e) { console.error("Erro ao enviar pedido:", e); }
 }
 
-// Consumo interno: envia item avulso (sem pedido_id)
 async function enviarConsumo(item, qtd) {
   try {
     const payload = {
@@ -96,6 +94,17 @@ async function enviarConsumo(item, qtd) {
       body: JSON.stringify(payload),
     });
   } catch (e) { console.error("Erro ao enviar consumo:", e); }
+}
+
+async function carregarDoDia() {
+  try {
+    const res = await fetch(SCRIPT_URL);
+    const json = await res.json();
+    return json;
+  } catch (e) {
+    console.error("Erro ao carregar dados:", e);
+    return { pedidos: [], consumos: [] };
+  }
 }
 
 const btnCircle = (bg) => ({
@@ -145,12 +154,11 @@ function ItemCard({ item, onAddCarrinho, onConsumido }) {
           <div style={{ color: COR.sub, fontSize: 12 }}>{fmt(item.preco)}</div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <button onClick={dec} style={btnCircle("#2a2a2a")}>−</button>
+          <button onClick={dec} style={btnCircle("#2a2a2a")}>-</button>
           <span style={{ color: COR.texto, fontWeight: 700, fontSize: 20, minWidth: 28, textAlign: "center" }}>{qtd}</span>
           <button onClick={inc} style={btnCircle(COR.laranja)}>+</button>
         </div>
       </div>
-
       {msg ? (
         <div style={{ marginTop: 8, textAlign: "center", padding: "7px 0", borderRadius: 8, background: msg === "consumo" ? "#2a2a2a" : "#1a3a00", color: msg === "consumo" ? "#aaa" : "#7fff00", fontWeight: 700, fontSize: 13, fontFamily: FONT }}>
           {msg === "consumo" ? "Consumo registrado" : "Adicionado ao carrinho"}
@@ -181,7 +189,7 @@ function CarrinhoBar({ carrinho, onConfirmar, onLimpar }) {
   );
 }
 
-function AbaHoje({ pedidos, consumos, onFecharDia }) {
+function AbaHoje({ pedidos, consumos, onFecharDia, carregando }) {
   const totalFaturamento = pedidos.reduce((s, p) => s + p.total, 0);
   const totalCmv = pedidos.reduce((s, p) => s + p.cmv_total, 0);
   const totalItens = pedidos.reduce((s, p) => s + p.quantidade, 0);
@@ -198,7 +206,8 @@ function AbaHoje({ pedidos, consumos, onFecharDia }) {
     rankMap[p.sabor].qtd += p.quantidade;
   });
   const ranking = Object.entries(rankMap).sort((a, b) => b[1].lucro - a[1].lucro).slice(0, 5);
-  const cmvConsumos = consumos.reduce((s, c) => s + (c.item.cmv * c.qtd), 0);
+  const cmvConsumos = consumos.reduce((s, c) => s + (c.cmv_total || 0), 0);
+  const totalConsumosQtd = consumos.reduce((s, c) => s + (c.quantidade || 0), 0);
 
   const kpi = (label, valor, cor = COR.laranja) => (
     <div style={{ background: COR.card, borderRadius: 10, padding: "14px 8px", textAlign: "center", flex: 1 }}>
@@ -206,6 +215,14 @@ function AbaHoje({ pedidos, consumos, onFecharDia }) {
       <div style={{ color: COR.sub, fontSize: 10, marginTop: 2 }}>{label}</div>
     </div>
   );
+
+  if (carregando) {
+    return (
+      <div style={{ textAlign: "center", padding: "60px 0", color: COR.sub, fontFamily: FONT, fontSize: 16 }}>
+        Carregando dados do dia...
+      </div>
+    );
+  }
 
   return (
     <div style={{ paddingBottom: 80 }}>
@@ -220,7 +237,7 @@ function AbaHoje({ pedidos, consumos, onFecharDia }) {
         <div style={{ background: "#1a1a2a", borderRadius: 10, padding: "10px 14px", marginBottom: 12, borderLeft: "3px solid #555" }}>
           <div style={{ color: "#aaa", fontWeight: 700, fontSize: 13, fontFamily: FONT }}>Consumo Interno</div>
           <div style={{ color: COR.sub, fontSize: 12, marginTop: 4 }}>
-            {consumos.reduce((s, c) => s + c.qtd, 0)} itens  CMV: {fmt(cmvConsumos)}
+            {totalConsumosQtd} itens  CMV: {fmt(cmvConsumos)}
           </div>
         </div>
       )}
@@ -245,7 +262,7 @@ function AbaHoje({ pedidos, consumos, onFecharDia }) {
           {pedidosUnicos.slice(-10).reverse().map((pid) => {
             const itens = pedidos.filter((v) => v.pedido_id === pid);
             const totalPed = itens.reduce((s, v) => s + v.total, 0);
-            const hora = new Date(Number(pid)).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+            const hora = itens[0]?.hora || "";
             return (
               <div key={pid} style={{ borderBottom: "1px solid #2a2a2a", paddingBottom: 8, marginBottom: 8 }}>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
@@ -261,6 +278,12 @@ function AbaHoje({ pedidos, consumos, onFecharDia }) {
         </div>
       )}
 
+      {pedidos.length === 0 && (
+        <div style={{ textAlign: "center", color: COR.sub, fontFamily: FONT, fontSize: 15, padding: "40px 0" }}>
+          Nenhuma venda registrada hoje ainda
+        </div>
+      )}
+
       <button onClick={onFecharDia} style={btnFlat("#c70000", { width: "100%", padding: "14px 0", fontSize: 15 })}>
         Fechar Dia
       </button>
@@ -273,6 +296,16 @@ export default function App() {
   const [carrinho, setCarrinho] = useState([]);
   const [pedidos, setPedidos] = useState([]);
   const [consumos, setConsumos] = useState([]);
+  const [carregando, setCarregando] = useState(true);
+
+  // Carrega historico do dia ao abrir — funciona em qualquer dispositivo
+  useEffect(() => {
+    carregarDoDia().then(({ pedidos: p, consumos: c }) => {
+      setPedidos(p || []);
+      setConsumos(c || []);
+      setCarregando(false);
+    });
+  }, []);
 
   function addCarrinho({ item, qtd }) {
     setCarrinho((prev) => {
@@ -287,23 +320,25 @@ export default function App() {
   }
 
   function registrarConsumo({ item, qtd }) {
-    setConsumos((prev) => [...prev, { item, qtd }]);
+    setConsumos((prev) => [...prev, {
+      sabor: item.nome,
+      quantidade: qtd,
+      cmv_total: item.cmv * qtd,
+    }]);
   }
 
   async function confirmarPedido() {
     if (carrinho.length === 0) return;
     const pedido_id = String(Date.now());
-
-    // Manda tudo de uma vez para o Apps Script
     await enviarPedido(pedido_id, carrinho);
 
-    // Atualiza estado local
     const novosItens = carrinho.map(({ item, qtd }) => ({
       pedido_id,
       sabor: item.nome,
       quantidade: qtd,
       total: item.preco * qtd,
       cmv_total: item.cmv * qtd,
+      hora: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
     }));
     setPedidos((prev) => [...prev, ...novosItens]);
     setCarrinho([]);
@@ -348,7 +383,14 @@ export default function App() {
         {aba === "salgados" && renderItens(SALGADOS)}
         {aba === "bebidas" && renderItens(BEBIDAS)}
         {aba === "doces" && renderItens(DOCES)}
-        {aba === "hoje" && <AbaHoje pedidos={pedidos} consumos={consumos} onFecharDia={fecharDia} />}
+        {aba === "hoje" && (
+          <AbaHoje
+            pedidos={pedidos}
+            consumos={consumos}
+            onFecharDia={fecharDia}
+            carregando={carregando}
+          />
+        )}
       </div>
 
       <CarrinhoBar carrinho={carrinho} onConfirmar={confirmarPedido} onLimpar={() => setCarrinho([])} />
