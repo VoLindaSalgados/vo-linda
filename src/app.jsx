@@ -1,127 +1,113 @@
 import { useState } from "react";
 
-const SCRIPT_URL = "COLE_SUA_URL_AQUI";
+// Fonte da identidade visual
+const _fontLink = document.createElement("link");
+_fontLink.rel = "stylesheet";
+_fontLink.href = "https://fonts.googleapis.com/css2?family=Asap+Condensed:wght@700;900&display=swap";
+document.head.appendChild(_fontLink);
 
-const COR = {
-  laranja: "#FF4800",
-  marrom: "#4D2000",
-  fundo: "#111",
-  card: "#1a1a1a",
-  texto: "#F2F2F2",
-};
+// ============================================================
+// CONFIG
+// ============================================================
+const SCRIPT_URL =
+"https://script.google.com/macros/s/AKfycby4Na_66YM7RghIhARzcw1hAdhWRU73b-zoK8l0dEuwk173JOcfW11pdiihtKF_jWED/exec";
 
+const COR = { laranja: "#FF4800", marrom: "#4D2000", fundo: "#111", card: "#1a1a1a", texto: "#F2F2F2", sub: "#aaa" };
+const FONT = "'Asap Condensed', sans-serif";
+const fmt = (v) => `R$ ${Number(v).toFixed(2).replace(".", ",")}`;
+
+// ============================================================
+// DADOS
+// ============================================================
 const SALGADOS = [
-  { id: "coxinha", nome: "Coxinha", preco: 4, tipo: "salgado" },
-  { id: "kibe", nome: "Kibe", preco: 4, tipo: "salgado" },
+{ id: "coxinha_frango", nome: "Coxinha Frango", preco: 4.00, cmv: 0.72, tipo: "salgado" },
+{ id: "kibe", nome: "Kibe", preco: 4.00, cmv: 0.36, tipo: "salgado" },
 ];
 
-// =============================
-// COMPONENTE ESTOQUE
-// =============================
-function AbaEstoque() {
-  const [produto, setProduto] = useState("");
-  const [quantidade, setQuantidade] = useState("");
-  const [custo, setCusto] = useState("");
-
-  async function enviar() {
-    if (!produto || !quantidade || !custo) return;
-
-    const payload = {
-      tipo: "estoque",
-      itens: [
-        {
-          produto,
-          quantidade: Number(quantidade),
-          custo_unit: Number(custo),
-        },
-      ],
-    };
-
+// ============================================================
+// ENVIO
+// ============================================================
+async function enviarParaSheets(payload) {
+  try {
     await fetch(SCRIPT_URL, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-
-    setProduto("");
-    setQuantidade("");
-    setCusto("");
-    alert("Estoque atualizado");
+  } catch (e) {
+    console.error(e);
   }
+}
+
+// ============================================================
+// ITEM
+// ============================================================
+function ItemCard({ item, onAddCarrinho }) {
+  const [qtd, setQtd] = useState(0);
 
   return (
-    <div style={{ padding: 12 }}>
-      <h3>Adicionar Estoque</h3>
+    <div style={{ background: COR.card, padding: 12, marginBottom: 10 }}>
+      <div>{item.nome}</div>
 
-      <input
-        placeholder="Produto"
-        value={produto}
-        onChange={(e) => setProduto(e.target.value)}
-      />
-      <br />
+      <div style={{ display: "flex", gap: 6 }}>
+        <button onClick={() => setQtd(q => Math.max(0, q - 1))}>-</button>
+        <span>{qtd}</span>
+        <button onClick={() => setQtd(q => q + 1)}>+</button>
+      </div>
 
-      <input
-        placeholder="Quantidade"
-        value={quantidade}
-        onChange={(e) => setQuantidade(e.target.value)}
-      />
-      <br />
-
-      <input
-        placeholder="Custo unitário"
-        value={custo}
-        onChange={(e) => setCusto(e.target.value)}
-      />
-      <br />
-
-      <button onClick={enviar}>Salvar</button>
+      <button onClick={() => onAddCarrinho({ item, qtd })}>
+        Adicionar
+      </button>
     </div>
   );
 }
 
-// =============================
-// APP PRINCIPAL
-// =============================
+// ============================================================
+// APP
+// ============================================================
 export default function App() {
   const [aba, setAba] = useState("salgados");
+  const [carrinho, setCarrinho] = useState([]);
 
-  const abas = [
-    { id: "salgados", label: "🥟 Salgados" },
-    { id: "hoje", label: "📊 Hoje" },
-    { id: "estoque", label: "📦 Estoque" },
-  ];
+  function addCarrinho({ item, qtd }) {
+    setCarrinho(prev => [...prev, { item, qtd }]);
+  }
+
+  async function confirmarPedido() {
+    const itens = carrinho.map(c => ({
+      tipo: c.item.tipo,
+      sabor: c.item.nome,
+      quantidade: c.qtd,
+      preco_unit: c.item.preco,
+      total: c.item.preco * c.qtd,
+      cmv_total: c.item.cmv * c.qtd,
+      consumo: false
+    }));
+
+    await enviarParaSheets({ itens });
+
+    setCarrinho([]);
+  }
 
   return (
-    <div style={{ background: COR.fundo, minHeight: "100vh", color: COR.texto }}>
-      
+    <div style={{ background: "#111", minHeight: "100vh" }}>
+
       {/* MENU */}
-      <div style={{ background: COR.marrom, padding: 12 }}>
-        {abas.map((a) => (
-          <button
-            key={a.id}
-            onClick={() => setAba(a.id)}
-            style={{ marginRight: 6 }}
-          >
-            {a.label}
-          </button>
-        ))}
+      <div>
+        <button onClick={() => setAba("salgados")}>Salgados</button>
       </div>
 
-      {/* CONTEÚDO */}
-      <div style={{ padding: 12 }}>
+      {/* ITENS */}
+      {aba === "salgados" && SALGADOS.map(item => (
+        <ItemCard key={item.id} item={item} onAddCarrinho={addCarrinho} />
+      ))}
 
-        {aba === "salgados" &&
-          SALGADOS.map((item) => (
-            <div key={item.id}>
-              {item.nome} - R$ {item.preco}
-            </div>
-          ))}
-
-        {aba === "estoque" && <AbaEstoque />}
-
-      </div>
+      {/* CARRINHO */}
+      {carrinho.length > 0 && (
+        <button onClick={confirmarPedido}>
+          Confirmar
+        </button>
+      )}
 
     </div>
   );
