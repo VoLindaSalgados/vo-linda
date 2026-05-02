@@ -1,6 +1,5 @@
 import { useState } from "react";
 
-// Fonte da identidade visual
 const _fontLink = document.createElement("link");
 _fontLink.rel = "stylesheet";
 _fontLink.href = "https://fonts.googleapis.com/css2?family=Asap+Condensed:wght@700;900&display=swap";
@@ -9,50 +8,58 @@ document.head.appendChild(_fontLink);
 const SCRIPT_URL =
 "https://script.google.com/macros/s/AKfycby4Na_66YM7RghIhARzcw1hAdhWRU73b-zoK8l0dEuwk173JOcfW11pdiihtKF_jWED/exec";
 
-const COR  = { laranja: "#FF4800", marrom: "#4D2000", fundo: "#111", card: "#1a1a1a", texto: "#F2F2F2", sub: "#aaa" };
+const COR = { laranja: "#FF4800", marrom: "#4D2000", fundo: "#111", card: "#1a1a1a", texto: "#F2F2F2", sub: "#aaa" };
 const FONT = "'Asap Condensed', sans-serif";
 
 const SALGADOS = [
-{ id: "coxinha_frango",    nome: "Coxinha Frango",       preco: 4.00, cmv: 0.72 },
-{ id: "coxinha_carne",     nome: "Coxinha Carne",        preco: 4.00, cmv: 0.98 },
-{ id: "coxinha_queijo",    nome: "Coxinha Queijo",       preco: 4.00, cmv: 1.07 },
-{ id: "coxinha_calabresa", nome: "Coxinha Calabresa",    preco: 4.00, cmv: 0.99 },
-{ id: "coxinha_bacon",     nome: "Coxinha Fr/Bacon",     preco: 4.00, cmv: 0.90 },
-{ id: "travesseiro",       nome: "Travesseiro Queijo",   preco: 4.00, cmv: 1.11 },
-{ id: "enrolado_salsicha", nome: "Enrolado Salsicha",    preco: 4.00, cmv: 0.85 },
-{ id: "enrolado_presunto", nome: "Enrolado Pres/Queijo", preco: 4.00, cmv: 1.12 },
-{ id: "kibe",              nome: "Kibe",                 preco: 4.00, cmv: 0.36 },
+  { id: "coxinha_frango",    nome: "Coxinha Frango",       preco: 4.00, cmv: 0.72 },
+  { id: "coxinha_carne",     nome: "Coxinha Carne",        preco: 4.00, cmv: 0.98 },
+  { id: "coxinha_queijo",    nome: "Coxinha Queijo",       preco: 4.00, cmv: 1.07 },
+  { id: "coxinha_calabresa", nome: "Coxinha Calabresa",    preco: 4.00, cmv: 0.99 },
+  { id: "coxinha_bacon",     nome: "Coxinha Fr/Bacon",     preco: 4.00, cmv: 0.90 },
+  { id: "travesseiro",       nome: "Travesseiro Queijo",   preco: 4.00, cmv: 1.11 },
+  { id: "enrolado_salsicha", nome: "Enrolado Salsicha",    preco: 4.00, cmv: 0.85 },
+  { id: "enrolado_presunto", nome: "Enrolado Pres/Queijo", preco: 4.00, cmv: 1.12 },
+  { id: "kibe",              nome: "Kibe",                 preco: 4.00, cmv: 0.36 },
 ];
 
 const BEBIDAS = [
-{ id: "suco_maquina", nome: "Suco Maquina",     preco: 2.00,  cmv: 0.80 },
-{ id: "agua_sg",      nome: "Agua s/ Gas",       preco: 3.50,  cmv: 0.98 },
-{ id: "agua_cg",      nome: "Agua c/ Gas",       preco: 3.50,  cmv: 1.15 },
-{ id: "coca_200",     nome: "Coca 200ml",         preco: 4.50,  cmv: 1.63 },
-{ id: "coca_350",     nome: "Coca 350ml",         preco: 7.00,  cmv: 3.32 },
-{ id: "coca_ks",      nome: "Coca KS 250ml",      preco: 6.00,  cmv: 3.32 },
-{ id: "coca_2l",      nome: "Coca 2L",            preco: 18.00, cmv: 9.80 },
-{ id: "fanta_200",    nome: "Fanta 200ml",        preco: 4.50,  cmv: 1.51 },
-{ id: "fanta_2l",     nome: "Fanta 2L",           preco: 18.00, cmv: 8.02 },
-{ id: "sprite_200",   nome: "Sprite 200ml",       preco: 4.50,  cmv: 1.51 },
-{ id: "guarana_350",  nome: "Guarana 350ml",      preco: 7.00,  cmv: 3.33 },
-{ id: "guarana_2l",   nome: "Guarana 2L",         preco: 18.00, cmv: 7.99 },
-{ id: "ouro_250",     nome: "Ouro Verde 250ml",   preco: 4.00,  cmv: 1.63 },
-{ id: "ouro_2l",      nome: "Ouro Verde 2L",      preco: 12.00, cmv: 5.50 },
+  { id: "suco_maquina", nome: "Suco Maquina",    preco: 2.00,  cmv: 0.80 },
+  { id: "agua_sg",      nome: "Agua s/ Gas",      preco: 3.50,  cmv: 0.98 },
+  { id: "agua_cg",      nome: "Agua c/ Gas",      preco: 3.50,  cmv: 1.15 },
+  { id: "coca_200",     nome: "Coca 200ml",        preco: 4.50,  cmv: 1.63 },
+  { id: "coca_350",     nome: "Coca 350ml",        preco: 7.00,  cmv: 3.32 },
+  { id: "coca_ks",      nome: "Coca KS 250ml",     preco: 6.00,  cmv: 3.32 },
+  { id: "coca_2l",      nome: "Coca 2L",           preco: 18.00, cmv: 9.80 },
+  { id: "fanta_200",    nome: "Fanta 200ml",       preco: 4.50,  cmv: 1.51 },
+  { id: "fanta_2l",     nome: "Fanta 2L",          preco: 18.00, cmv: 8.02 },
+  { id: "sprite_200",   nome: "Sprite 200ml",      preco: 4.50,  cmv: 1.51 },
+  { id: "guarana_350",  nome: "Guarana 350ml",     preco: 7.00,  cmv: 3.33 },
+  { id: "guarana_2l",   nome: "Guarana 2L",        preco: 18.00, cmv: 7.99 },
+  { id: "ouro_250",     nome: "Ouro Verde 250ml",  preco: 4.00,  cmv: 1.63 },
+  { id: "ouro_2l",      nome: "Ouro Verde 2L",     preco: 12.00, cmv: 5.50 },
 ];
 
 const DOCES = [
-{ id: "brig_unit",  nome: "Brigadeiro",    preco: 2.00,  cmv: 0.22 },
-{ id: "ninho_unit", nome: "Ninho",         preco: 2.00,  cmv: 0.20 },
-{ id: "casad_unit", nome: "Casadinho",     preco: 2.00,  cmv: 0.19 },
-{ id: "prest_unit", nome: "Prestigio",     preco: 2.00,  cmv: 0.20 },
-{ id: "beij_unit",  nome: "Beijinho",      preco: 2.00,  cmv: 0.19 },
-{ id: "kit6",       nome: "Kit 6 Doces",   preco: 10.00, cmv: 1.19 },
-{ id: "kit15",      nome: "Kit 15 Doces",  preco: 25.00, cmv: 2.97 },
-{ id: "halls",      nome: "Halls",         preco: 2.50,  cmv: 1.22 },
-{ id: "trident",    nome: "Trident",       preco: 3.00,  cmv: 1.82 },
-{ id: "pao_mel",    nome: "Pao de Mel",    preco: 10.00, cmv: 4.30 },
+  { id: "brig_unit",  nome: "Brigadeiro",   preco: 2.00,  cmv: 0.22 },
+  { id: "ninho_unit", nome: "Ninho",        preco: 2.00,  cmv: 0.20 },
+  { id: "casad_unit", nome: "Casadinho",    preco: 2.00,  cmv: 0.19 },
+  { id: "prest_unit", nome: "Prestigio",    preco: 2.00,  cmv: 0.20 },
+  { id: "beij_unit",  nome: "Beijinho",     preco: 2.00,  cmv: 0.19 },
+  { id: "kit6",       nome: "Kit 6 Doces",  preco: 10.00, cmv: 1.19 },
+  { id: "kit15",      nome: "Kit 15 Doces", preco: 25.00, cmv: 2.97 },
+  { id: "halls",      nome: "Halls",        preco: 2.50,  cmv: 1.22 },
+  { id: "trident",    nome: "Trident",      preco: 3.00,  cmv: 1.82 },
+  { id: "pao_mel",    nome: "Pao de Mel",   preco: 10.00, cmv: 4.30 },
 ];
+
+const TODOS = [...SALGADOS, ...BEBIDAS, ...DOCES];
+
+function tipoDoItem(id) {
+  if (SALGADOS.find(s => s.id === id)) return "salgado";
+  if (BEBIDAS.find(b => b.id === id)) return "bebida";
+  return "doce";
+}
 
 function fmt(v) { return "R$ " + v.toFixed(2).replace(".", ","); }
 
@@ -67,6 +74,13 @@ async function enviarParaSheets(payload) {
   } catch (e) { console.error("Sheets error", e); }
 }
 
+function btnCircle(bg) {
+  return { width: 36, height: 36, borderRadius: "50%", background: bg, color: "#fff", border: "none", fontSize: 20, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700 };
+}
+
+// ============================================================
+// ABA HOJE
+// ============================================================
 function AbaHoje({ vendas, onFechar }) {
   const [fechado, setFechado] = useState(false);
   const totalVendas = vendas.reduce((s, v) => s + (v.consumo ? 0 : v.total), 0);
@@ -123,13 +137,9 @@ function AbaHoje({ vendas, onFechar }) {
   );
 }
 
-function btnCircle(bg) {
-  return { width: 32, height: 32, borderRadius: "50%", background: bg, color: "#fff", border: "none", fontSize: 18, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" };
-}
-function btnFlat(bg) {
-  return { padding: "8px 10px", borderRadius: 8, background: bg, color: "#fff", border: "none", fontSize: 13, cursor: "pointer", fontWeight: 600 };
-}
-
+// ============================================================
+// APP PRINCIPAL
+// ============================================================
 const ABAS = [
   { id: "salgados", emoji: "🥟", label: "Salgados" },
   { id: "bebidas",  emoji: "🥤", label: "Bebidas"  },
@@ -140,18 +150,83 @@ const ABAS = [
 export default function App() {
   const [aba, setAba] = useState("salgados");
   const [vendas, setVendas] = useState([]);
+  const [carrinho, setCarrinho] = useState({}); // { id: qtd }
+  const [confirmando, setConfirmando] = useState(false);
+  const [ok, setOk] = useState(false);
+
+  const totalItens = Object.values(carrinho).reduce((s, q) => s + q, 0);
+  const totalValor = Object.entries(carrinho).reduce((s, [id, qtd]) => {
+    const item = TODOS.find(i => i.id === id);
+    return s + (item ? item.preco * qtd : 0);
+  }, 0);
+
+  function setQtd(id, qtd) {
+    setCarrinho(prev => {
+      const next = { ...prev };
+      if (qtd <= 0) delete next[id];
+      else next[id] = qtd;
+      return next;
+    });
+  }
+
+  async function confirmarPedido() {
+    if (totalItens === 0 || confirmando) return;
+    setConfirmando(true);
+    const itensCarrinho = Object.entries(carrinho);
+    for (const [id, qtd] of itensCarrinho) {
+      const item = TODOS.find(i => i.id === id);
+      if (!item) continue;
+      const tipo = tipoDoItem(id);
+      const payload = { tipo, sabor: item.nome, quantidade: qtd, preco_unit: item.preco, total: qtd * item.preco, cmv_total: qtd * item.cmv, consumo: false };
+      await enviarParaSheets(payload);
+      setVendas(prev => [...prev, payload]);
+    }
+    setCarrinho({});
+    setOk(true);
+    setConfirmando(false);
+    setTimeout(() => { setOk(false); setAba("salgados"); }, 1200);
+  }
+
+  const abaAtual = aba;
+  const itensDaAba = abaAtual === "salgados" ? SALGADOS : abaAtual === "bebidas" ? BEBIDAS : DOCES;
+
   return (
-    <div style={{ background: COR.fundo, minHeight: "100vh", maxWidth: 480, margin: "0 auto", fontFamily: FONT, paddingBottom: 80 }}>
+    <div style={{ background: COR.fundo, minHeight: "100vh", maxWidth: 480, margin: "0 auto", fontFamily: FONT, paddingBottom: totalItens > 0 ? 130 : 80 }}>
+      {/* HEADER */}
       <div style={{ background: COR.marrom, padding: "16px 16px 12px", position: "sticky", top: 0, zIndex: 10 }}>
         <div style={{ color: COR.laranja, fontWeight: 900, fontSize: 22, letterSpacing: 1 }}>VO LINDA</div>
         <div style={{ color: "#a07050", fontSize: 12 }}>Salgados - Balcao</div>
       </div>
+
+      {/* CONTEUDO */}
       <div style={{ padding: "16px" }}>
-        {aba === "salgados" && SALGADOS.map(s => <ContadorComVenda key={s.id} item={s} tipo="salgado" onVenda={v => setVendas(prev => [...prev, v])} />)}
-        {aba === "bebidas"  && BEBIDAS.map(b  => <ContadorComVenda key={b.id} item={b} tipo="bebida"  onVenda={v => setVendas(prev => [...prev, v])} />)}
-        {aba === "doces"    && DOCES.map(d    => <ContadorComVenda key={d.id} item={d} tipo="doce"    onVenda={v => setVendas(prev => [...prev, v])} />)}
-        {aba === "hoje"     && <AbaHoje vendas={vendas} onFechar={() => setVendas([])} />}
+        {aba !== "hoje" && itensDaAba.map(item => (
+          <ItemCard
+            key={item.id}
+            item={item}
+            qtd={carrinho[item.id] || 0}
+            isSalgado={aba === "salgados"}
+            onChange={qtd => setQtd(item.id, qtd)}
+          />
+        ))}
+        {aba === "hoje" && <AbaHoje vendas={vendas} onFechar={() => setVendas([])} />}
       </div>
+
+      {/* BOTAO CONFIRMAR PEDIDO (flutuante) */}
+      {totalItens > 0 && aba !== "hoje" && (
+        <div style={{ position: "fixed", bottom: 64, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 480, padding: "0 16px", zIndex: 20 }}>
+          <button
+            onClick={confirmarPedido}
+            disabled={confirmando}
+            style={{ width: "100%", padding: "15px", background: ok ? "#2a7a2a" : COR.laranja, color: "#fff", border: "none", borderRadius: 12, fontWeight: 900, fontSize: 16, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", boxShadow: "0 4px 20px rgba(255,72,0,0.4)" }}
+          >
+            <span>{ok ? "Salvo!" : `${totalItens} ${totalItens === 1 ? "item" : "itens"}`}</span>
+            <span>{ok ? "Proximo cliente" : `Confirmar Pedido - ${fmt(totalValor)}`}</span>
+          </button>
+        </div>
+      )}
+
+      {/* NAV */}
       <div style={{ position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 480, background: COR.marrom, display: "flex", borderTop: `2px solid ${COR.laranja}` }}>
         {ABAS.map(a => (
           <button key={a.id} onClick={() => setAba(a.id)} style={{ flex: 1, padding: "10px 0", border: "none", cursor: "pointer", background: aba === a.id ? COR.laranja : "transparent", color: aba === a.id ? "#fff" : "#a07050", fontSize: 11, fontWeight: 700 }}>
@@ -164,50 +239,26 @@ export default function App() {
   );
 }
 
-function ContadorComVenda({ item, tipo, onVenda }) {
-  const [qtd, setQtd] = useState(0);
-  const [ok, setOk]   = useState(false);
-  const [cons, setCons] = useState(false);
-
-  async function confirmar() {
-    if (qtd === 0) return;
-    const payload = { tipo, sabor: item.nome, quantidade: qtd, preco_unit: item.preco, total: qtd * item.preco, cmv_total: qtd * item.cmv, consumo: false };
-    await enviarParaSheets(payload);
-    onVenda(payload);
-    setOk(true);
-    setTimeout(() => { setOk(false); setQtd(0); }, 1500);
-  }
-
-  async function consumoInterno() {
-    if (qtd === 0) return;
-    const payload = { tipo, sabor: item.nome, quantidade: qtd, preco_unit: 0, total: 0, cmv_total: qtd * item.cmv, consumo: true };
-    await enviarParaSheets(payload);
-    onVenda(payload);
-    setCons(true);
-    setTimeout(() => { setCons(false); setQtd(0); }, 1500);
-  }
-
+// ============================================================
+// ITEM CARD — só + e - , sem confirmar individual
+// ============================================================
+function ItemCard({ item, qtd, isSalgado, onChange }) {
   const margem = Math.round(((item.preco - item.cmv) / item.preco) * 100);
-
   return (
     <div style={{ background: COR.card, border: `1px solid ${qtd > 0 ? COR.laranja : "#2a2a2a"}`, borderRadius: 12, padding: "12px 14px", marginBottom: 10 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
           <div style={{ color: COR.texto, fontWeight: 700, fontSize: 15 }}>{item.nome}</div>
           <div style={{ color: COR.sub, fontSize: 12 }}>{fmt(item.preco)} - margem {margem}%</div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <button onClick={() => setQtd(q => Math.max(0, q - 1))} style={btnCircle("#2a2a2a")}>-</button>
-          <span style={{ color: COR.texto, fontWeight: 700, fontSize: 18, minWidth: 24, textAlign: "center" }}>{qtd}</span>
-          <button onClick={() => setQtd(q => q + 1)} style={btnCircle(COR.laranja)}>+</button>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <button onClick={() => onChange(qtd - 1)} style={btnCircle("#2a2a2a")}>-</button>
+          <span style={{ color: qtd > 0 ? COR.laranja : COR.texto, fontWeight: 900, fontSize: 20, minWidth: 28, textAlign: "center" }}>{qtd}</span>
+          <button onClick={() => onChange(qtd + 1)} style={btnCircle(COR.laranja)}>+</button>
+          {isSalgado && (
+            <button onClick={() => onChange(qtd + 5)} style={{ ...btnCircle("#333"), width: "auto", borderRadius: 8, padding: "0 10px", fontSize: 13 }}>+5</button>
+          )}
         </div>
-      </div>
-      <div style={{ display: "flex", gap: 6 }}>
-        {tipo === "salgado" && <button onClick={() => setQtd(q => q + 5)} style={{ ...btnFlat("#2a2a2a"), flex: 1 }}>+5</button>}
-        <button onClick={consumoInterno} style={{ ...btnFlat("#2a2a2a"), flex: 1 }}>{cons ? "Consumo" : "C"}</button>
-        <button onClick={confirmar} disabled={qtd === 0} style={{ ...btnFlat(qtd > 0 ? COR.laranja : "#333"), flex: 2, color: qtd > 0 ? "#fff" : "#555" }}>
-          {ok ? "Salvo!" : qtd > 0 ? `Confirmar - ${fmt(qtd * item.preco)}` : "Confirmar"}
-        </button>
       </div>
     </div>
   );
